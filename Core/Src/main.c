@@ -47,14 +47,16 @@
 /* Private variables ---------------------------------------------------------*/
 I2C_HandleTypeDef hi2c1;
 
+IWDG_HandleTypeDef hiwdg;
+
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
 static volatile char isr_flag = 0;
 #define LIGHT_ON GPIO_PIN_RESET
 #define LIGHT_OFF GPIO_PIN_SET
 #define LIGHT_GPIO GPIOA
-#define LIGHT1_PIN GPIO_PIN_10
-#define LIGHT2_PIN GPIO_PIN_11
+#define LIGHT1_PIN GPIO_PIN_11
+#define LIGHT2_PIN GPIO_PIN_10
 #define LIGHT1_DEFAULT_VALUE LIGHT_OFF
 #define LIGHT2_DEFAULT_VALUE LIGHT_OFF
 #define GESTURE_FROM_LEFT_DIR_VALUE LIGHT_ON
@@ -69,6 +71,7 @@ static volatile char isr_flag = 0;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_I2C1_Init(void);
+static void MX_IWDG_Init(void);
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
@@ -142,6 +145,7 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_I2C1_Init();
+  MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
   Init_APDS9960();
   /* USER CODE END 2 */
@@ -149,25 +153,33 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   light_setup();
+  uint32_t debugTimer = HAL_GetTick();
+  bool debugF = true;
   while (1)
   {
 
   /* USER CODE END WHILE */
 
   /* USER CODE BEGIN 3 */
-//	  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
-//	  HAL_Delay(500);
-//	  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
-//	  HAL_Delay(500);
-
-	  // gestures
-	          if( isr_flag )
-	          {
-	          	  HAL_NVIC_DisableIRQ(EXTI15_10_IRQn);
-	              process_gesture();
-	              isr_flag = false;
-	              HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
-	          }
+//
+	  if( isr_flag )
+	  {
+		  HAL_NVIC_DisableIRQ(EXTI15_10_IRQn);
+		  process_gesture();
+		  isr_flag = false;
+		  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+	  }
+	   HAL_IWDG_Refresh(&hiwdg);
+	   uint32_t t1 = HAL_GetTick();
+	   if (t1 - debugTimer > 1000){
+		   debugTimer = t1;
+		   if (debugF){
+			   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
+		   } else {
+			   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
+		   }
+		   debugF = !debugF;
+	   }
   }
   /* USER CODE END 3 */
 
@@ -185,10 +197,11 @@ void SystemClock_Config(void)
 
     /**Initializes the CPU, AHB and APB busses clocks 
     */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSI|RCC_OSCILLATORTYPE_HSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.HSEPredivValue = RCC_HSE_PREDIV_DIV1;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+  RCC_OscInitStruct.LSIState = RCC_LSI_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL9;
@@ -237,6 +250,20 @@ static void MX_I2C1_Init(void)
   hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
   hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
   if (HAL_I2C_Init(&hi2c1) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+}
+
+/* IWDG init function */
+static void MX_IWDG_Init(void)
+{
+
+  hiwdg.Instance = IWDG;
+  hiwdg.Init.Prescaler = IWDG_PRESCALER_4;
+  hiwdg.Init.Reload = 1024;
+  if (HAL_IWDG_Init(&hiwdg) != HAL_OK)
   {
     _Error_Handler(__FILE__, __LINE__);
   }
