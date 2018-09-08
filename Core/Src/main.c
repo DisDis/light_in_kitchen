@@ -103,6 +103,7 @@ static void light_setup(){
 	HAL_GPIO_WritePin(LIGHT_GPIO, LIGHT2_PIN, LIGHT_OFF);
 
 	for(int i = 0; i < 10; i++){
+		HAL_IWDG_Refresh(&hiwdg);
 		HAL_Delay(100);
 		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, LIGHT_ON);
 //		HAL_GPIO_WritePin(LIGHT_GPIO, LIGHT1_PIN, LIGHT_ON);
@@ -111,6 +112,7 @@ static void light_setup(){
 		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, LIGHT_OFF);
 //		HAL_GPIO_WritePin(LIGHT_GPIO, LIGHT1_PIN, LIGHT_OFF);
 //		HAL_GPIO_WritePin(LIGHT_GPIO, LIGHT2_PIN, LIGHT_OFF);
+
 	}
 }
 /* USER CODE END 0 */
@@ -154,7 +156,6 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   light_setup();
   uint32_t debugTimer = HAL_GetTick();
-  bool debugF = true;
   while (1)
   {
 
@@ -173,12 +174,7 @@ int main(void)
 	   uint32_t t1 = HAL_GetTick();
 	   if (t1 - debugTimer > 1000){
 		   debugTimer = t1;
-		   if (debugF){
-			   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
-		   } else {
-			   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
-		   }
-		   debugF = !debugF;
+		   HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
 	   }
   }
   /* USER CODE END 3 */
@@ -261,7 +257,7 @@ static void MX_IWDG_Init(void)
 {
 
   hiwdg.Instance = IWDG;
-  hiwdg.Init.Prescaler = IWDG_PRESCALER_4;
+  hiwdg.Init.Prescaler = IWDG_PRESCALER_16;
   hiwdg.Init.Reload = 1024;
   if (HAL_IWDG_Init(&hiwdg) != HAL_OK)
   {
