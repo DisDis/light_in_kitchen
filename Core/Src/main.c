@@ -153,7 +153,6 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   light_setup();
-  uint32_t debugTimer = HAL_GetTick();
   uint32_t checkAPDSTimer = HAL_GetTick();
   while (1)
   {
@@ -171,11 +170,8 @@ int main(void)
 	  }
 	   HAL_IWDG_Refresh(&hiwdg);
 	   uint32_t t1 = HAL_GetTick();
-	   if (t1 - debugTimer > 1000){
-		   debugTimer = t1;
+	   if (t1 - checkAPDSTimer > 1000 * 15){
 		   HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-	   }
-	   if (t1 - checkAPDSTimer > 1000 * 60 * 5){
 		   checkAPDSTimer = t1;
 		   checkAPDS();
 	   }
@@ -372,12 +368,12 @@ static void process_gesture()
           case DIR_LEFT:
 //        	  trace_printf("Left\n");
         	  HAL_GPIO_WritePin(LIGHT_GPIO, LIGHT1_PIN, GESTURE_FROM_LEFT_DIR_VALUE);
-        	  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GESTURE_FROM_LEFT_DIR_VALUE);
+//        	  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GESTURE_FROM_LEFT_DIR_VALUE);
             break;
           case DIR_RIGHT:
 //        	  trace_printf("Right\n");
         	  HAL_GPIO_WritePin(LIGHT_GPIO, LIGHT1_PIN, GESTURE_FROM_RIGHT_DIR_VALUE);
-        	  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GESTURE_FROM_RIGHT_DIR_VALUE);
+//        	  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GESTURE_FROM_RIGHT_DIR_VALUE);
             break;
           case DIR_NEAR:
 //        	  trace_printf("Near\n");
